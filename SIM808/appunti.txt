@@ -1,0 +1,41 @@
+con il cnnettore seriale sulla destra e quindi i 4 led sulla parte posteriore destra
+il primo led a destra acceso quando e' alimentato
+il terzo led partendo da destra indica che e' stato acceso il modulo dopo aver premuto il pulsante anteriore destro
+il quarto led da destra pulsa frequentemente quando cerca la linea telefonica rallenta a circa 1 volta al secondo quando aggancia la stessa
+il secondo led si accende quando si accnde il GPS "AT+CGPSPWR=1"e lampeggia quando riesce ad agganciare il segnale
+per visualizzare e quindi gestire i segnali GPS bisogna attivare la NMEA "AT+CGPSOUT=255"
+
+"AT+CGPSPWR=0" spegne il GPS mentre "AT+CGPSOUT=0" non fa vedere piu' le coordinate
+
+la schedina ha bisogno di una alimentazione sua altrimenti durante il colloquio con il GPS se arriva una telefonata la schedina si spegne
+
+per attivare la gestione dei massaggi sembra ci sia bisogno di
+AT+CSCA="+393711000111"   questo coamndo setta SMS Service Center e di
+AT+CMGF=1                 questo lo setta SMS mode in text
+
+AT+CNUM			Per scoprire numero telefono SIM
++CNUM: "","+393713472054",145,7,4
+
+La schedas SIM in SIM800 va con l'angolo tagliato all'esterno
+
+ATD337634273;   comando di chiamata telefonica, indispensabile  ;
+La libreria che contiene SIM900.h e' modificata x ARDUINO MEGA ripristinare per arduino UNO
+le specifiche stanno nelle istruzioni contenute in doc della libreria stessa ho disattivato èure Define DEBUG_ON
+
+il comando
+AT+CPIN?
+
+
+ERROR
+Se la sim non c'e' o e' senza segnale
+
+NORMAL POWER DOWN
+AT+CPIN?
+
+AT+CPIN?
+
+
++CPIN: READY
+
+OK
+Se la sim ha agganciato il segnale

@@ -1,0 +1,18 @@
+ The circuit:
+  * SD card attached to SPI bus as follows:
+ ** MOSI - pin 11 on Arduino Uno/Duemilanove/Diecimila
+ ** MISO - pin 12 on Arduino Uno/Duemilanove/Diecimila
+ ** CLK - pin 13 on Arduino Uno/Duemilanove/Diecimila
+ ** CS - depends on your SD card shield or module nel nostro caso il 7
+
+
+SD Card Module	Arduino Mega 2560	Arduino Uno
+1 - Gnd		GND			GND
+2 - MISO	D50 (MISO)		D12 (MISO)
+3 - SCK		D52 (SCK)		D13 (SCK)
+4 - MOSI	D51 (MOSI)		D11 (MOSI)
+5 - CS		D53 (SS)		D10 (SS)		da quello che ho capito e' libero
+6 - +5	+5V	+5V
+7 - +3.3	N.C	N.C
+8 - GND	N.C	N.C
+

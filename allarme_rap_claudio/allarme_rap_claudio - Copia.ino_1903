@@ -1,0 +1,478 @@
+/*
+ * Allarme volumetrico pin 7 
+ */
+ 
+#include <SPI.h>
+
+boolean ledStatus;
+
+char* on = "ON";
+char* off = "OFF";
+char* home = "HOME";
+char* aiuto = "AIUTO";
+char* test = "TEST";
+char* test_h = "TEST_HOME";
+
+char* statusLabel;
+char* colorLabel;
+
+// int pir1Pin =14;  // Input for HC-S501 il pin 14 -> A0 come digitale terrazzo garibaldi
+// int pir2Pin =15;  // Input for HC-S501 il pin 15 -> A1 come digitale finestra bagno
+// int pir3Pin =16;  // Input for HC-S501 il pin 16 -> A2 come digitale terrazzo giardino
+// int pir4Pin =17;  // Input for HC-S501 il pin 17 -> A3 come digitale corridoio camere
+// int pir5Pin =18;  // Input for HC-S501 il pin 18 -> A4 come digitale corridoio ingresso
+byte  pin_pir	[] ={  14, 15, 16, 17, 18};		//status sensori 0 chiuso 1 aperto
+
+// int int1Pin =8;   // Controllo cavo pir 1 integro 0 interrotto garibaldi
+// int int2Pin =7;   // Controllo cavo pir 1 integro 0 interrotto bagno
+// int int3Pin =4;   // Controllo cavo pir 1 integro 0 interrotto giardino
+byte  pin_int	[] ={  8, 7, 4};		//status sensori 1 chiuso 0 aperto
+
+int ledPin =9;  // LED stato generale
+int ledHin =5;  // LED stato home
+int ledOin =6;  // LED stato acceso
+
+int pirPin;     // Pir incriminato
+int intPin;     // Filo interrotto
+int	pirini;		// Pir iniziale
+int	pirfine;	// Pir finale
+
+int valled;
+
+int pirValue =0; // Place to store read PIR Value
+int incorso;
+long  tempo_disattivo =180000L;  // Tempo in millisecondi di interdizione dopo allarme
+
+byte  a_status	=0;									//status allarme    0 spento 1 acceso 2 in allarme
+int	p_status	[] ={  0, 0, 0, 0, 0};		//status sensori 0 chiuso 1 aperto
+int  p_stapre	[] ={  -1, -1, -1, -1, -1};		//status sensori 0 chiuso 1 aperto
+
+int  i_status	[] ={  0, 0, 0};		//status sensori 0 chiuso 1 aperto
+int  i_stapre	[] ={  -1, -1, -1};		//status sensori 0 chiuso 1 aperto
+
+String	inputString = "";         // a string to hold incoming data
+boolean	stringComplete = false;  // whether the string is complete
+
+void setup()
+{
+	int	pir;
+	
+  Serial.begin(9600);
+  Serial.println("Allarme");
+
+  pinMode(ledPin, OUTPUT);
+  pinMode(ledHin, OUTPUT);
+  pinMode(ledOin, OUTPUT);
+  
+	for (pir =0; pir <5; pir++)
+		pinMode(pin_pir[pir], INPUT);
+	  
+    for (pir =0; pir <3; pir++)
+	  pinMode(pin_int[pir], INPUT);
+ 
+  digitalWrite(ledPin, LOW);
+  digitalWrite(ledHin, LOW);
+  digitalWrite(ledOin, LOW);
+
+  delay(10000);
+
+  ledStatus = false;
+  statusLabel = off;
+  Serial.println("arduino|allarme|status|SPENTO");
+  Serial.println("arduino_allarme|SPENTO|Accensione Arduino");
+  pirini =0;
+  pirfine =5;
+}
+
+int stato;
+long  inizio_all;
+
+void loop()
+{
+	int	pir;
+	char	appo[100];
+	
+	pirValue =0;
+	
+	if (incorso
+	&& (millis() < inizio_all || ((millis() -inizio_all) >=tempo_disattivo)))
+	{
+		Serial.println("Controllo attivo");
+		incorso =0;
+	}
+  	serialEvent(); //call the function
+	// print the string when a newline arrives:
+	
+	if (stringComplete)
+	{
+		int ix;
+		int iy;
+		int	iz;
+		int		comando =-1;
+		Serial.println(inputString);
+		for(ix =iy =iz =0; ix <inputString.length(); ix++, iz++)
+		{
+			//	raspberry|allarme|APRI
+			if (inputString[ix] =='|')
+			{
+				iy++;
+				appo[iz] ='\0';
+				if (iy == 1)
+				{
+					if (strcmp(appo, "raspberry"))
+						break;
+				}
+				if (iy == 2)
+				{
+					if (strcmp(appo, "allarme"))
+						break;
+				}
+				iz =-1;
+			}
+			else	appo[iz] =inputString[ix];
+		}
+		iy++;
+		if (ix ==inputString.length())
+		{
+			appo[iz] ='\0';
+			
+			if (iy == 3)
+			{
+				if (!strcmp(appo, "APRI"))
+					comando =0;
+				else
+					if (!strcmp(appo, "CHIUDI"))
+					comando =1;
+				else
+					if (!strcmp(appo, "HOME"))
+					comando =2;
+				else
+					if (!strcmp(appo, "AIUTO"))
+					comando =3;
+				else
+					if (!strcmp(appo, "TEST"))
+					comando =4;
+				else
+					if (!strcmp(appo, "TEST_HOME"))
+					comando =5;
+				else
+					if (!strcmp(appo, "TEST_1"))
+					comando =6;
+				else
+					if (!strcmp(appo, "TEST_2"))
+					comando =7;
+				else
+					if (!strcmp(appo, "TEST_3"))
+					comando =8;
+				else
+					if (!strcmp(appo, "TEST_4"))
+					comando =9;
+				else
+					if (!strcmp(appo, "TEST_5"))
+					comando =10;
+
+				if (comando != -1)
+					Serial.println(inputString);
+			}
+		}
+		inputString = "";
+		stringComplete = false;
+		if (comando != -1)
+		{
+			Serial.print("arduino|");
+			Serial.print("allarme|");
+			Serial.print("status|");
+
+			pirini =0;
+			pirfine =5;
+			
+			switch(comando)
+			{
+				case 0:
+					Serial.println("ACCESO");
+					statusLabel = on;
+					Serial.println("arduino_allarme|ACCESO|.");
+					break;
+				case 1:
+					Serial.println("SPENTO");
+					statusLabel = off;
+					Serial.println("arduino_allarme|SPENTO|.");
+					break;
+				case 2:
+					Serial.println("HOME");
+					statusLabel = home;
+					Serial.println("arduino_allarme|HOME|.");
+					pirfine =3;
+					break;
+				case 3:
+					Serial.println("AIUTO");
+					Serial.println("arduino_allarme|IN ALLARME|Richiesta di AIUTO");
+					a_status =2;
+					statusLabel = aiuto;
+					break;
+				case 4:
+					Serial.println("TEST");
+					statusLabel = test;
+					Serial.println("arduino_allarme|TEST|.");
+					break;
+				case 5:
+					Serial.println("TEST_HOME");
+					statusLabel = test_h;
+					Serial.println("arduino_allarme|TEST_HOME|.");
+					pirfine =3;
+					break;
+				case 6:
+					Serial.println("TEST_T.sala");
+					statusLabel = test_h;
+					Serial.println("arduino_allarme|TEST|Terrazza_sala");
+					pirini =0;
+					pirfine =1;
+					break;
+				case 7:
+					Serial.println("TEST_F.bagno");
+					statusLabel = test_h;
+					Serial.println("arduino_allarme|TEST|Finestra_bagno");
+					pirini =1;
+					pirfine =2;
+					break;
+				case 8:
+					Serial.println("TEST_T.cucina");
+					statusLabel = test_h;
+					Serial.println("arduino_allarme|TEST|Terrazzo_cucina");
+					pirini =2;
+					pirfine =3;
+					break;
+				case 9:
+					Serial.println("TEST_Z.giorno");
+					statusLabel = test_h;
+					Serial.println("arduino_allarme|TEST|Zona_giorno");
+					pirini =3;
+					pirfine =4;
+					break;
+				case 10:
+					Serial.println("TEST_Z.notte");
+					statusLabel = test_h;
+					Serial.println("arduino_allarme|TEST|Zona_notte");
+					pirini =4;
+					pirfine =5;
+					break;	
+					
+			}
+
+		}
+	}
+  
+  	if(!strcmp(statusLabel, on))
+	{
+		ledStatus = true;
+		valled =128;
+		analogWrite(ledOin, 128);
+		digitalWrite(ledHin, LOW);
+	}
+
+  	if(!strcmp(statusLabel, home))	
+	{
+		ledStatus = true;
+		valled =64;
+		analogWrite(ledHin, 200);
+		digitalWrite(ledOin, LOW);
+	}
+
+	if(!strcmp(statusLabel, off)
+	|| !strncmp(statusLabel, "TEST", 4))
+		ledStatus = false;
+	
+	if(ledStatus)
+	{
+		analogWrite(ledPin, valled);
+		if (!strcmp(statusLabel, home))
+				colorLabel = "green";
+		else	colorLabel = "red";
+	}
+	else
+	{
+		digitalWrite(ledPin, LOW);
+		digitalWrite(ledHin, LOW);
+		digitalWrite(ledOin, LOW);
+		colorLabel = "black";
+	}
+  
+	pirPin =intPin =0;
+
+	for (pir =pirini; pir <pirfine; pir++)
+	{
+		p_status[pir] =0;
+	
+		p_status[pir] = digitalRead(pin_pir[pir]);
+		if (!pirPin && p_status[pir])
+			pirValue =pirPin =pir +1;
+	}
+
+// Controllo integrita' fili pir esterni	
+	for (pir =0; pir <3; pir++)
+	{
+		i_status[pir] = digitalRead(pin_int[pir]);
+		if (!intPin && !i_status[pir])
+			intPin =pir +1;
+	}
+	
+	for (pir =0; pir <3 && !incorso; pir++)
+	{
+		if ((!strcmp(statusLabel, on)
+			|| !strcmp(statusLabel, home)
+			|| !strncmp(statusLabel, "TEST", 4))
+		&& (i_status[pir] !=i_stapre[pir]))
+		{
+			Serial.print("arduino|");
+			switch(pir +1)
+			{
+				case 1:
+					sprintf(appo, "%s", "Terrazzo_sala");
+					break;
+				case 2:
+					sprintf(appo, "%s", "Finestra_bagno");
+					break;
+				case 3:
+					sprintf(appo, "%s", "Terrazzo_cucina");
+					break;
+			}
+			Serial.print(appo);
+			Serial.print("|status|");
+			if (i_status[pir])
+				Serial.println("filo_integro");
+			else
+				Serial.println("filo_interrotto");
+		}
+		i_stapre[pir] =i_status[pir];
+	}
+	
+		
+	for (pir =pirini; pir <pirfine && !incorso; pir++)
+	{
+		if ((!strcmp(statusLabel, on)
+			|| !strcmp(statusLabel, home)
+			|| !strncmp(statusLabel, "TEST", 4)
+			|| p_stapre[pir] <0)
+		&& (p_status[pir] !=p_stapre[pir]))
+		{
+			Serial.print("arduino|");
+			switch(pir +1)
+			{
+				case 1:
+					sprintf(appo, "%s", "Terrazzo_sala");
+					break;
+				case 2:
+					sprintf(appo, "%s", "Finestra_bagno");
+					break;
+				case 3:
+					sprintf(appo, "%s", "Terrazzo_cucina");
+					break;
+				case 4:
+					sprintf(appo, "%s", "Zona_giorno");
+					break;
+				case 5:
+					sprintf(appo, "%s", "Zona_notte");
+					break;
+			}
+			Serial.print(appo);
+			Serial.print("|status|");
+			if (p_status[pir])
+				Serial.println("movimento");
+			else
+				Serial.println("attesa");
+		}
+		p_stapre[pir] =p_status[pir];
+	}
+
+  if (!incorso
+  && (stato != pirPin || intPin)) 
+  {
+    if (intPin)
+      stato =intPin;
+	else
+		stato =pirPin;
+    
+    if (stato)
+    {
+      int i;
+      char appo[20];
+	  
+	  *appo ='\0';
+
+	  if (!intPin)
+		switch(pirPin)
+      {
+        case 1:
+            sprintf(appo, "%s", "PIR -> Terrazza_sala");
+            break;
+        case 2:
+            sprintf(appo, "%s", "PIR -> Finestra_bagno");
+            break;
+        case 3:
+            sprintf(appo, "%s", "PIR -> Terrazzo_cucina");
+            break;
+        case 4:
+            sprintf(appo, "%s", "PIR -> Zona_giorno");
+            break;
+        case 5:
+            sprintf(appo, "%s", "PIR -> Zona_notte");
+            break;
+      }
+
+      switch(intPin)
+      {
+        case 1:
+            sprintf(appo, "%s", "Filo -> Terrazza_sala");
+            break;
+        case 2:
+            sprintf(appo, "%s", "Filo -> Finestra_bagno");
+            break;
+        case 3:
+            sprintf(appo, "%s", "Filo -> Terrazzo_cucina");
+            break;
+      }
+	  Serial.println(appo);
+      for(i=0; i<50; i++)// Wen a frequency sound
+      {
+        analogWrite(ledPin, 128);
+        delay(1);//delay 1ms
+        digitalWrite(ledPin, LOW);
+        delay(100);// delay 1ms
+      }
+      if (ledStatus && !incorso)
+      {
+        inizio_all =millis();
+        incorso =1;
+		Serial.println("arduino|allarme|status|ALLARME IN CORSO");
+		Serial.print("arduino_allarme|IN ALLARME|");
+		Serial.println(appo);
+      }
+		else	if(!incorso
+				&& !strncmp(statusLabel, "TEST", 4))
+		{
+			inizio_all =millis();
+			incorso =1;
+			Serial.print("arduino_allarme|IN TEST|");
+			Serial.println(appo);
+		}
+    }
+    else  Serial.println(F("Spento"));
+  }
+}
+
+void serialEvent()
+{
+	while (Serial.available())
+	{
+		// get the new byte:
+		char inChar = (char)Serial.read();
+		// if the incoming character is a newline, set a flag
+		// so the main loop can do something about it:
+		if (inChar == '\n' || inChar == '\r')
+		{
+			inputString += "";
+			stringComplete = true;
+		}
+		else	inputString += inChar;	// add it to the inputString:
+	}
+}

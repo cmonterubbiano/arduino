@@ -1,0 +1,12 @@
+raspberry|valore_minimo|zona_giorno|15.43
+raspberry|valore_massimo|zona_giorno|20.43
+raspberry|valore_minimo|zona_notte|15.43
+raspberry|valore_massimo|zona_notte|20.43
+
+riscalamento aggiungere bottone AUTOMATICO in zona_giorno/notte
+
+aggiungere per ogni finestra/serranda/port "ESCL.." o xxxx
+il valore va aggiunto e scritto nei campi e_
+
+accendere telecamera e spegnere
+accendere presa_1 e spegnere

@@ -1,0 +1,57 @@
+Dati tecnici:
+Potenza Di ingresso: DC10V-14V
+Corrente Standby: < 5MA
+Frequenza RF: 315 M o 433 M
+RF modalità di lavoro: supereterodina
+sensibilità di ricezione: > 97dbm
+distanza di trasmissione: 20-100 m (spazio aperto)
+modalità di decodifica: MCU decodifica software
+archiviazione remota: 25 pz
+supporto remoto tipo: Apprendimento del codice,codice fisso (Rolling code può essere disegno)
+modalità di lavoro: Momentaneo, Toggle, aggancio di ritardo (5 s, 10 s, 15 s)
+tipo di cablaggio: terminale fisso
+Terminale di uscita: NO, NC, COM
+dimensione del PWB: 35*30*18mm (L, W,H)
+schema 1:
++ V: 12 V + ingresso;
+-V: 12 V-in ingresso;
+NO: Uscita, normalmente aperto;
+COM: Uscita, comune;
+NC: Uscita, normalmente chiuso;
+a proposito di modalità di Lavoro:
+momentaneo: Premere il tasto del telecomando, il relè si collega, rilasciare il tasto del telecomando, il relè dis-collega.
+Toggle: Premere una volta il tasto del telecomando, il relè si collega, premere due volte il tasto del telecomando, il relè dis-collega.
+latch: Premere il tasto del telecomando A, il relè si collega, premere il tasto del telecomando B, il relè dis-connect.
+modalità di ritardo Tiem: Premere il tasto del telecomando, il relè si collega, da quando rilasciare il tasto del telecomando, dopo 5 s o 10 s o 15 s, il relè disconnette automaticamente.
+cancellazione del codice:
+premere il pulsante di apprendimento sul ricevitori per 8 volte, i codici saranno puliti.
+dopo clearning codice, tutto il telecomando non funziona più.
+apprendimento del codice: (momentaneo)
+premere il tasto di apprendimento sul ricevitore una volta tempo, si entra in modalità di impostazione momentaneo.
+attendere un attimo, il LED sarà spento, si entra in stato di apprendimento.
+premere il tasto del telecomando, indicatore LED sulla scheda del ricevitore lampeggia poi venire fuori.
+dopo 3 secondi, il LED indicatore sarà acceso di nuovo, imparare con successo.
+apprendimento del codice: (Toggle)
+premere il tasto di apprendimento sul ricevitore due volte il tempo, viene fornito in modalità di impostazione a levetta
+attendere un attimo, il LED sarà spento, si entra in stato di apprendimento.
+premere il tasto del telecomando, indicatore LED sulla scheda del ricevitore lampeggia poi venire fuori.
+dopo 3 secondi, il LED indicatore sarà acceso di nuovo, imparare con successo.
+apprendimento del codice: (A Scatto)
+nota: Quando si sceglie per aggancio modalità, al fine di saperne di più telecomando, hai bisogno di imparare due tasto differente, la prima volta imparato è per " ON ", la seconda volta imparato per " OFF ".
+per esempio: pulsante A = ON, pulsante B = OFF
+premere il tasto di apprendimento sul ricevitore triple time, si entra in modalità a scatto.
+attendere un attimo, l' indicatore LED sulla scheda del ricevitore lampeggia poi venire fuori.
+premere il tasto del telecomando A.
+LED lampeggia per 5 volte.
+premere il tasto del telecomando B.
+Led lampeggia per 5 volte.
+dopo 3 secondi, il LED indicatore sarà acceso di nuovo, imparare con successo.
+A = ON, B = OFF.
+apprendimento del codice: (modalità di ritardo)
+premere il tasto di apprendimento sul ricevitore quarta volta, il tempo dealy per 5 secondi.
+premere il tasto di apprendimento sul ricevitore quinta volta, il tempo di ritardo per 10 secondi.
+premere il tasto di apprendimento sul ricevitore sesta volta, il tempo di ritardo per 15 secondi.
+l'indicatore LED si spegne.
+premere il tasto del telecomando, LED lampeggia e si spegne.
+dopo 3 secondi, il LED indicatore sarà acceso di nuovo, imparare con successo.
+NOTA: Il sistema in grado di memorizzare per 30 pz di telecomandi, se il telecomando ottenere più di 30 pz, il telecomando iniziale sarà perso.

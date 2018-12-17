@@ -1,0 +1,105 @@
+in arrivo da raspberry
+raspberry|camera_giorgia|serranda|APRI
+		 "camera_ospiti" serranda"APRI			serranda_1 vale solo x camera_ospiti
+		 "bagno_grande"  zona_giorno   CHIUDI
+		 "camera_bambini"zona_notte    FERMA
+		 "camera_giorgia"serranda_1	AIUTO			
+		 "tutte"			AUTOMATICO	nella colonna serrande, serranda valgono fino alla riga "tutte"
+		 "riscaldamento"		xx.xx		in questa riga colonna serrande vale zona_giorno o zona_notte
+		 "allarme"					FERMA nella colonna APRI vale solo fino alla riga "tutte"
+		 "telecamera"					AIUTO vale solo x la riga "allarme"
+		 "presa_1"					APRI e CHIUDI vale x tutte le righe tranne valore_minimo e valore_massimo
+		 "valore_minimo"				in questa riga colonna serrande vale zona_giorno o zona_notte e "APRI" vale xx.xx gradi e frazioni relative
+		 "valore_massimo"				in questa riga colonna serrande vale zona_giorno o zona_notte e "APRI" vale xx.xx gradi e frazioni relative
+								AUTOMATICO vale solo x riscaldamento
+
+raspberry_select|valoreLetto
+		 
+da arduino a raspberry
+arduino_select|nome_stanza|nome_colonna		serve x interrogare il data base x sapere situazione colonna
+																					x vedere x esempio se una porta o finestra e' esclusa dalla'allarme
+																					x vedere quale era la situazione precedente dell'allarme
+
+
+arduino|camera_ospiti|
+		camera_bambini|
+		camera_giorgia|
+		sala|
+		studio|umidita|xx.xx
+arduino|camera_ospiti|
+		camera_bambini|
+		camera_giorgia|
+		sala|
+		studio|temperatura|xx.xx
+arduino|camera_ospiti|
+		camera_bambini|
+		camera_giorgia|
+		sala|
+		studio|temperatura_percepita|xx.xx		
+arduino|camera_ospiti|
+		camera_ospiti|
+		bagno_grande|
+		studio|
+		sala|
+		camera_bambini|
+		camera_giorgia|
+						finestra_1|
+						finestra|
+									CHIUSA
+									APERTA
+
+arduino|
+		camera_ospiti|
+		camera_ospiti|
+		bagno_grande|
+		camera_bambini|
+		camera_giorgia|
+						serranda_1|
+						serranda|
+									CHIUSA
+									APERTA
+									IN APERTURA
+									IN CHIUSURA
+arduino|sala|porta|
+arduino|corridoio|porta|
+						CHIUSA
+						APERTA
+arduino|riscaldamento|
+						r_zona_giorno|
+						r_zona_notte|
+										ACCESO
+										SPENTO
+arduino|allarme|status|
+						ACCESO					Nel caso di accensione allarme si riporta la sitazione serrande
+						SPENTO					fineste e porte nelle relative righe con colonne precedute da a_
+						IN ALLARME
+arduino|telecamera|status|
+							ACCESA
+							SPENTA
+arduino|presa_1|status|
+						ACCESA
+						SPENTA
+
+da arduino mega a aurduino uno ossia allarme
+						
+Accendi
+Spegni
+Stato
+Aiuto
+Allarme,Motivo allarme
+
+da arduino uno ad arduino mega
+
+messaggio ----> messaggio
+
+Telefono a 337634273
+00=> STATUS Modulo GSM = PRONTO
+ => STATUS Modulo GSM = INATTIVO
+ => Numero non autorizzato!
+00=> Sistema di allarme spento
+01=> Sistema di allarme acceso
+inviato messaggio a [337634273] : Allarme in ALLARME --> messaggio
+inviato messaggio a [337634273] : [02==> Allarme SPENTO/03==> Allarme ACCESO]
+00==> Allarme SPENTO
+01==> Allarme ACCESO
+02==> Allarme in ALLARME

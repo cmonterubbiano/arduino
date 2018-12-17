@@ -1,0 +1,78 @@
+In apri_cancello sostituire chiamata al cancello con chiusura temporanea rele
+
+E' capitato in maniera random che non funzionasse perche' dopo il ring non faceva vedere
+chi aveva chiamato per cui tutti i numeri risultavano non in rubrica la funzione e' tornata
+dopo aver lanciato il prova_sim900_alfieri
+
+La libreria originale e' stata modificata togliendo DEBUG_ON la define e' stata commentata
+per evitare una serie infinita di scritte di DEBUG, quando ho ripristinato la scheda
+con prova_sim900_alfieri, vedi punto precedente il DEBUG_ON era ancora attivo ....,
+Tutti i riferimenti ai pin di softserial sono stati cambiati in 7 e 8
+Ho modificato pure una istruzione che faceva vedere tutti i messaggi in solo quelli non letti
+cambiandi lo 0 o 4 in 1 su una istruzione di libreria della serie CMGF mi pare.
+
+Inserire la velocita della seriale uguale a quella della scheda
+se si inserisce AT+IPR=2400 mettere Serial.begin(2400)
+
+Quando scompare l'eco dei comandi digitare ATE=1 x riattivarlo dove ATE=0 lo toglie
+
+Per prova_sim900 fa fede 
+http://www.carminenoviello.com/it/2013/11/03/usare-la-gsmgprs-shield-di-seed-studio/
+
+simula_allarme
+http://www.brescianet.com/appunti/Elettronica/Arduino/corso/Esempio_GSMMODULE.htm 
+
+Se in rubrica non c'e' la posizione 185
+ossia la prima posizione vuota risponde cosi
+AT+CPBR=185,185
+
+OK
+Se voglio vedere dalla 1 alla 1
+AT+CPBR=1,1
+
++CPBR: 1,"3312229982",129,"A Cancello casa"
+OK
+Se voglio vedere dalla 1 alla 3
+AT+CPBR=1,3
+
++CPBR: 1,"3312229982",129,"A Cancello casa"
++CPBR: 2,"3318967748",129,"A Cancello luci"
++CPBR: 3,"42202",129,"Aggiorna SIM"
+OK
+Se voglio vedere dalla 2 alla 2
+AT+CPBR=2,2
+
++CPBR: 2,"3318967748",129,"A Cancello luci"
+OK
+AT+CMGL="REC UNREAD"
+AT+CMGL="REC READ"
+AT+CMGL="ALL"
+
+Per leggere da data e l'ora
+AT+CCLK?
++CCLK: "16/11/09,19:50:43+01"
+Per settarla
+AT+CCLK="16/11/09,19:49:50+01"
+Per cancellare un poszione in rubrica
+AT+CPBW= 2    dove 2 e' la posizione
+Per inserire un numero in rubrica
+AT+CPBW=,"0039337634273",129,"Claudio"
+
+http://www.carminenoviello.com/it/2013/11/03/usare-la-gsmgprs-shield-di-seed-studio/
+il comando
+AT+CPIN?
+
+
+ERROR
+Se la sim non c'e' o e' senza segnale
+
+NORMAL POWER DOWN
+AT+CPIN?
+
+AT+CPIN?
+
+
++CPIN: READY
+
+OK
+Se la sim ha agganciato il segnale

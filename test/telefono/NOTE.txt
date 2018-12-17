@@ -1,0 +1,9 @@
+Per finire il vostro Arduphone dovrete solamente mettere questo programma in arduino UNO/MEGA.
+Una volta fatto ciò assemblatelo ed alimentatelo.
+Chiunque voglia lavorare su questo progetto è il benvenuto.
+
+Estraete tutto dal file ZIP
+
+Per vedere tutte le funzioni aprite il file   Phone_CALL_SMS_
+
+da ALOISI DAVIDE

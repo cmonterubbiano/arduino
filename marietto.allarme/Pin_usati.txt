@@ -1,0 +1,22 @@
+
+2	DHT0
+3	DHT1
+4	DHT2
+5	DHT3
+6	DHT4
+7	DHT5
+8/13	Pulsanti
+14
+15
+16
+17
+18/19	Collegamento seriale arduino allarme
+20/32	Sensori finestre e porte
+33
+34
+35
+36
+37
+38
+39
+40/51	Rele serrande e riscaldamento

@@ -1,0 +1,207 @@
+/* Tratto dall'esempio "Simply TinyGPS" di Mikal Hart
+   e modificato da Simone Dall'Asta per integrare
+   l'inserimento in scheda SD e aggiunta di misurazione
+   di altitudine e velocità.
+
+   http://www.dallaf.it/simo
+*/
+
+#include <SoftwareSerial.h>
+#include <SPI.h>
+#include <SD.h>
+#include <TinyGPS.h>
+
+TinyGPS gps;
+SoftwareSerial ss(4,3);
+
+File file;
+char	appo[80];
+char	coord[15];
+char	garmi[15];
+
+void setup()
+{
+	*coord = *garmi ='\0';
+	Serial.begin(9600);
+	ss.begin(9600);
+
+	Serial.print("Inizializzazione Card: ");
+	if (!SD.begin(7)) //il Pin 7 è collegato a CS
+	{
+		Serial.println("FALLITA!");
+		return;
+	}
+	Serial.println("ESEGUITA!");
+
+	Serial.print("TinyGPS library v. ");
+	Serial.println(TinyGPS::library_version());
+	Serial.println();
+}
+
+void loop()
+{
+	bool newData = false;
+	unsigned long chars;
+	unsigned short sentences, failed;
+
+  // For one second we parse GPS data and report some key values
+	for (unsigned long start = millis(); millis() - start < 1000;)
+	{
+		while (ss.available())
+		{
+			char c = ss.read();
+     // Serial.write(c); // uncomment this line if you want to see the GPS data flowing
+			if (gps.encode(c)) // Did a new valid sentence come in?
+			newData = true;
+		}
+	}
+
+	if (newData)
+	{
+		float flat, flon;
+		unsigned long data_ddmmyy, time_hhmmsscc, age_ms;
+		float speed_kmh = 0;
+		float altitude_m;
+		unsigned long age;
+		gps.f_get_position(&flat, &flon, &age);
+//    long flat, flon;
+//    unsigned long data_ddmmyy, time_hhmmsscc, age_ms;
+//    float speed_kmh = 0;
+//    float altitude_m;
+//    unsigned long age;
+//    gps.get_position(&flat, &flon, &age);
+		gps.get_datetime(&data_ddmmyy, &time_hhmmsscc, &age_ms);
+		speed_kmh = gps.f_speed_kmph();
+		altitude_m = gps.f_altitude();
+
+		if (age != TinyGPS::GPS_INVALID_FIX_TIME)
+		{
+      // Serial.print("[");
+      // Serial.print(data_ddmmyy);
+      // Serial.print("  ");
+      // Serial.print(time_hhmmsscc);
+      // Serial.print(" ]  ");
+		}
+    // Serial.print("LAT=");
+    // Serial.print(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flat, 7);
+    // Serial.print(" LON=");
+    // Serial.print(flon == TinyGPS::GPS_INVALID_F_ANGLE ? 0.0 : flon, 7);
+    // Serial.print(" SAT=");
+    // Serial.print(gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gps.satellites());
+    // Serial.print(" PREC=");
+    // Serial.print(gps.hdop() == TinyGPS::GPS_INVALID_HDOP ? 0 : gps.hdop());
+    // Serial.print(" VEL=");
+    // Serial.print(speed_kmh);
+    // Serial.print("km/h");
+    // Serial.print(" ALT=");
+    // Serial.print(altitude_m);
+    // Serial.println("m s.l.m.");
+		String risultato_gps = "";
+		if (age != TinyGPS::GPS_INVALID_FIX_TIME)
+		{
+			if (!*coord)
+			{
+      delay(50);
+				sprintf(coord, "CO%02ld%02ld%02ld%06ld.txt", (data_ddmmyy %100L), ((data_ddmmyy /100L) %100L), (data_ddmmyy /10000L), (time_hhmmsscc /100L));
+				Serial.println(coord);
+        strcpy(coord, "coord.txt");
+			}
+			if (!*garmi)
+			{
+      
+				sprintf(garmi, "GA%02ld%02ld%02ld%06ld.txt", (data_ddmmyy %100L), ((data_ddmmyy /100L) %100L), (data_ddmmyy /10000L), (time_hhmmsscc /100L));
+				Serial.println(garmi);
+        strcpy(garmi, "garmin.txt");
+			}			
+			risultato_gps += "[";
+			sprintf(appo, "%02ld/%02ld/%02ld", (data_ddmmyy /10000L), ((data_ddmmyy /100L) %100L), (data_ddmmyy %100L));
+			risultato_gps += appo;
+			risultato_gps += " alle ";
+			sprintf(appo, "%02ld:%02ld:%02ld", (time_hhmmsscc /1000000L), ((time_hhmmsscc /10000L) %100L), ((time_hhmmsscc /100L) %100L));
+			risultato_gps += appo;
+			risultato_gps += " ]  ";
+		}
+		long  l_flat =flat *10000000L;
+		long  l_flon =flon *10000000L;
+		long  l_alti =altitude_m *100L;
+		risultato_gps += "LAT=";
+ //   risultato_gps += flat;
+		risultato_gps += l_flat /10000000L;
+		risultato_gps += ".";
+		risultato_gps += l_flat %10000000L;
+		risultato_gps += " - LON=";
+ //   risultato_gps += flon;
+		risultato_gps += l_flon /10000000L;
+		risultato_gps += ".";
+		risultato_gps += l_flon %10000000L;
+		risultato_gps += " - SAT=";
+		risultato_gps += gps.satellites();
+		risultato_gps += " - PREC=";
+		risultato_gps += gps.hdop();
+		risultato_gps += " - VEL=";
+		risultato_gps += speed_kmh;
+		risultato_gps += "km/h";
+		risultato_gps += " - ALT=";
+		risultato_gps += altitude_m;
+		risultato_gps += "m s.l.m.";
+    delay(50);
+
+
+		if (age != TinyGPS::GPS_INVALID_FIX_TIME and flat != TinyGPS::GPS_INVALID_F_ANGLE and flon != TinyGPS::GPS_INVALID_F_ANGLE and gps.satellites() != TinyGPS::GPS_INVALID_SATELLITES and gps.hdop() != TinyGPS::GPS_INVALID_HDOP)
+		{
+			file = SD.open(coord, FILE_WRITE); //File in scrittura
+			if (file) //Se il file è stato aperto correttamente
+			{
+				Serial.print("Scrivo : ");
+				Serial.println(risultato_gps);
+				Serial.println("Scrittura su file: ");
+				file.println(risultato_gps); //Scrivo su file il numero
+
+				file.close(); //Chiusura file
+				Serial.println("ESEGUITA!");
+			}
+			else
+			{
+				Serial.println("ERRORE: apertura file coord.txt");
+			}
+
+			file = SD.open(garmi, FILE_WRITE); //File in scrittura
+			if (file) //Se il file è stato aperto correttamente
+			{
+				// <trkpt lat="43.299956" lon="13.735479">
+				sprintf(appo, "\t\t<trkpt lat=\"%02ld.%07ld\" lon=\"%02ld.%07ld\">", (l_flat /10000000L), (l_flat %10000000L), (l_flon /10000000L), (l_flon %10000000L));
+				Serial.println(appo);
+				file.println(appo); //Scrivo su file il numero
+				// <ele>664.20001220703125</ele>
+				sprintf(appo, "\t\t\t<ele>%01ld.%02ld</ele>", (l_alti /100L), (l_alti %100L));
+				Serial.println(appo);
+				file.println(appo); //Scrivo su file il numero
+				// <time>2017-01-09T09:47:58.000Z</time>
+				sprintf(appo, "\t\t\t<time>20%02ld-%02ld-%02ldT%02ld:%02ld:%02ld.%02ldZ</time>", (data_ddmmyy %100L), ((data_ddmmyy /100L) %100L), (data_ddmmyy /10000L), (time_hhmmsscc /1000000L), ((time_hhmmsscc /10000L) %100L), ((time_hhmmsscc /100L) %100L), (time_hhmmsscc %100L));
+				Serial.println(appo);
+				file.println(appo); //Scrivo su file il numero
+				// </trkpt>
+				strcpy(appo, "\t\t</trkpt>");
+				Serial.println(appo);
+				file.println(appo); //Scrivo su file il numero
+
+				file.close(); //Chiusura file
+			}
+			else
+			{
+				Serial.println("ERRORE: apertura file garmin.txt");
+			}
+		}
+		risultato_gps = "";
+	}
+
+	gps.stats(&chars, &sentences, &failed);
+//	Serial.print(" CHARS=");
+//	Serial.print(chars);
+//	Serial.print(" SENTENCES=");
+//	Serial.print(sentences);
+//	Serial.print(" CSUM ERR=");
+//	Serial.println(failed);
+	if (chars == 0)
+		Serial.println("** No characters received from GPS: check wiring **");
+}
