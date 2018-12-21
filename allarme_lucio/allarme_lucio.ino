@@ -38,6 +38,10 @@ int		i_notte	=0;
 int		i_tipo_1	=0;
 int		i_test	=0;
 
+int		i_messaggi	=0;
+int		i_telefono	=0;
+int		i_sirena	=0;
+
 char	w_azione	[][11] ={  "ACCESO", "SPENTO", "NOTTE", "TIPO_1", "TEST", "IN_ALLARME", "AIUTO"};
 int		w_cicli	[] ={  0, 0, 0, 0, 0, 0, 0};
 int		w_tempo_ciclo	[] ={ 0, 0, 0, 0, 0, 0, 0};
@@ -121,30 +125,20 @@ void  Analizza_Sirena()
 			w_cicli[ix] =a_cicli;
 			w_tempo_ciclo[ix] =a_tempo_ciclo;
 			w_tempo_intervallo[ix] =a_tempo_intervallo;
-			Serial.print(ix);
-			Serial.print(" - ");
-			Serial.print(a_azione);
-			Serial.print(" - ");
-			Serial.print(a_cicli);
-			Serial.print(" - ");
-			Serial.print(a_tempo_ciclo);
-			Serial.print(" - ");
-			Serial.println(a_tempo_intervallo);
+			// Serial.print(ix);
+			// Serial.print(" - ");
+			// Serial.print(a_azione);
+			// Serial.print(" - ");
+			// Serial.print(a_cicli);
+			// Serial.print(" - ");
+			// Serial.print(a_tempo_ciclo);
+			// Serial.print(" - ");
+			// Serial.println(a_tempo_intervallo);
 			break;
 		}
 	}
 }
 
-void Leggi_Sirena()
-{
-	int	ix;
-	
-	for (ix =0; ix <7; ix++)
-	{
-		Serial.print("arduino_sirena|");
-		Serial.println(w_azione[ix]);
-	}
-}
 
 void Suona_Sirena()
 {
@@ -170,17 +164,20 @@ void Suona_Sirena()
 		ix =4;
 	else
 		return;
-	Serial.print(ix);
-	Serial.print(" - ");
-	Serial.print(w_cicli[ix]);
-	Serial.print(" - ");
-	Serial.print(w_tempo_ciclo[ix]);
-	Serial.print(" - ");
-	Serial.println(w_tempo_intervallo[ix]);
+	// Serial.print("Posizione e tempi -> ");
+	// Serial.print(ix);
+	// Serial.print(" - ");
+	// Serial.print(w_cicli[ix]);
+	// Serial.print(" - ");
+	// Serial.print(w_tempo_ciclo[ix]);
+	// Serial.print(" - ");
+	// Serial.println(w_tempo_intervallo[ix]);
 	
 	for (iy =0; iy <w_cicli[ix]; iy++)
 	{
-		digitalWrite(SIRENA, HIGH);
+		if (ix !=6 || w_tempo_ciclo[ix])
+			digitalWrite(SIRENA, HIGH);
+
 		if (w_tempo_ciclo[ix])
 			delay(w_tempo_ciclo[ix]);
 		else
@@ -197,23 +194,26 @@ void Suona_Sirena()
 
 void Reset_AlarmSystem()
 {
-	Leggi_Sirena();
+	digitalWrite(SIRENA, LOW);
 	digitalWrite(LED, LOW);     // spegne inizialmente il LED che indica l'allarme
 	acceso = false;             // Indica che il LED non è acceso (allarme OFF)
 	SMSInviato=false;           // Indica che se avrò un allarme invia un SMS di avviso
 	Serial.println("allarme_spento");
+	
+	Serial.println("arduino_sirena");
 	allarme =0;
 	led_status =0;
 	indice_rubrica =0;
 
 	i_spento =1;
 	i_acceso =i_aiuto =i_notte =i_tipo_1 =i_test =0;
+	i_messaggi =i_telefono =i_sirena =1;
 	Suona_Sirena();
 }
 
 void Activate_AlarmSystem(int i_acc, int i_not,int i_ti1)
 {
-//digitalWrite(LED, HIGH);  // accende il LED simulando un allarme
+	digitalWrite(LED, HIGH);  // accende il LED simulando un allarme
 	acceso = true;            // Indica che il LED è acceso (allarme ON => pushbutton schiacciato)
 	SMSInviato=false;           // Indica che se avrò un allarme invia un SMS di avviso
 	allarme =0;
@@ -231,7 +231,7 @@ void Activate_AlarmSystem(int i_acc, int i_not,int i_ti1)
 		Serial.println("allarme_tipo_1");
 	else
 	{
-		Serial.println("allarme_controllo");
+		Serial.println("allarme_test");
 		acceso = false;
 		led_status =0;
 		i_test =1;
@@ -245,13 +245,19 @@ void  sms_status(int  flagall)
 		sprintf(smsbuffer, "Allarme in ALLARME --> %s", messaggio);
 	if (!arduino)
 	{
-		if (allarme)
-			sms.SendSMS(Mittente, smsbuffer); // restituisce true se invia l'SMS
-		else if (!acceso)
-		sms.SendSMS(Mittente,"Allarme SPENTO!"); // restituisce true se invia l'SMS
-		else
-		sms.SendSMS(Mittente,"Allarme ACCESO!"); // restituisce true se invia l'SMS
-		delay(500);
+		// if (allarme)
+			// sms.SendSMS(Mittente, smsbuffer); // restituisce true se invia l'SMS
+		// else if (!acceso)
+			// sms.SendSMS(Mittente,"Allarme SPENTO!"); // restituisce true se invia l'SMS
+		// else	if (acceso)
+			// sms.SendSMS(Mittente,"Allarme ACCESO!"); // restituisce true se invia l'SMS
+		// else	if (i_notte)
+			// sms.SendSMS(Mittente,"Allarme NOTTE!");
+		// else	if (i_tipo_1)
+			// sms.SendSMS(Mittente,"Allarme TIPO_1!");
+		// else
+			// sms.SendSMS(Mittente,"Allarme TEST!");
+		// delay(500);
 	}
 
 	if (flagall)
@@ -271,7 +277,7 @@ void  sms_status(int  flagall)
 		else	if (i_tipo_1)
 			Serial.println("allarme_tipo_1");
 		else
-			Serial.println("allarme_controllo");		
+			Serial.println("allarme_test");		
 	}
 }
 
@@ -339,6 +345,7 @@ void  Allarme_gen()
 	int iy;
 	
  	allarme = primo_giro =1;
+	i_messaggi =i_telefono =i_sirena =1;
 	Suona_Sirena();
 	for (ix =8, iy =0; smsbuffer[ix]; ix++)
 	{
@@ -354,6 +361,58 @@ void  Allarme_gen()
 	messaggio[iy] ='\0';
 	Serial.print("arduino_allarme|IN ALLARME|");
 	Serial.println(messaggio);
+	if (smsbuffer[ix] =='|')
+	{
+		char	appo[30];
+		int 	ic;
+		
+		ix++;
+		*appo ='\0';
+		
+		for (iy = ic =0; smsbuffer[ix]; ix++)
+		{
+			if (!isPrintable(smsbuffer[ix]))
+				continue;
+			if (smsbuffer[ix] =='|')
+			{
+				appo[iy] ='\0';
+
+				if (!strcmp(appo, "NO"))
+				{
+					if (!ic)
+						i_messaggi =0;
+					else	if (ic ==1)
+						i_telefono =0;
+					else	if (ic ==2)
+						break;
+				}
+				ic++;
+				iy =0;
+				*appo ='\0';
+				continue;
+				
+			}
+			if (smsbuffer[ix] =='~')
+				appo[iy++] =' ';
+			else
+				appo[iy++] =smsbuffer[ix];
+		}
+		if (ic)
+		{
+			appo[iy] ='\0';
+			
+			if (!strcmp(appo, "NO"))
+				i_sirena =0;	
+		}
+	}
+	Serial.print("azioni -> ");
+	if (i_messaggi)
+		Serial.print("-messaggi");
+	if (i_telefono)
+		Serial.print("-telefono");
+	if (i_sirena)
+		Serial.print("-sirena");
+	Serial.println("-");
 }
 
 int messaggio_gen(int pos_rub)
@@ -458,24 +517,30 @@ void loop()
 				Activate_AlarmSystem(0, 1, 0);
 			else  if (!strncmp(smsbuffer,"Tipo_1", 6))
 				Activate_AlarmSystem(0, 0, 1);
-			else  if (!strncmp(smsbuffer,"Controllo", 9))
+			else  if (!strncmp(smsbuffer,"Test", 4))
 				Activate_AlarmSystem(0, 0, 0);
 			else  if (!strncmp(smsbuffer,"Stato", 5))
 				sms_status(0);
+			else  if (!strncmp(smsbuffer,  "Ti ho chiamato 1 volta,", 23))
+				Reset_AlarmSystem();                                 		
 			else  if (!strncmp(smsbuffer,"Aiuto", 5))
 			{
 				Serial.println("allarme_aiuto");
-				strcpy(smsbuffer, "Allarme,AIUTO AIUTO AIUTO");
+				if (w_tempo_ciclo[6])
+					strcpy(smsbuffer, "Allarme,AIUTO AIUTO AIUTO|SI|SI|SI");
+				else
+					strcpy(smsbuffer, "Allarme,AIUTO AIUTO AIUTO|SI|SI|NO");
 				i_aiuto =1;
 				i_acceso =i_spento =i_notte =i_tipo_1 =i_test =0;
 				Allarme_gen();
 			}
 			else  if (!strncmp(smsbuffer,"Allarme", 7) && strlen(smsbuffer) > 8 && acceso)
 				Allarme_gen();
+			
 			else
 			{
 				Serial.print("Comando Ricevuto [tel. "+String(Mittente)+String("]: ") + String(smsbuffer));
-				Serial.println(" => Usare [Accendi] [NOTTE] [Controllo] [Spegni] [Stato] [Aiuto] [Allarme,....]");
+				Serial.println(" => Usare [Accendi] [NOTTE] [Test] [Spegni] [Stato] [Aiuto] [Allarme,....]");
 			}
       
 			if (!arduino)
@@ -503,12 +568,17 @@ void loop()
 		if (led_status)
 			digitalWrite(LED, LOW);     // spegne inizialmente il LED che indica l'allarme
 		else
-//digitalWrite(LED, HIGH);     // spegne inizialmente il LED che indica l'allarme
+			digitalWrite(LED, HIGH);     // spegne inizialmente il LED che indica l'allarme
+		
 		if (led_status)
 			led_status =0;
 		else
 			led_status =1;
-		if (SMSInviato ==false)
+		
+		if (i_sirena)
+			digitalWrite(SIRENA, HIGH);
+		
+		if (i_messaggi && SMSInviato ==false)
 		{
 			if (!messaggio_gen(++indice_rubrica))
 			{
@@ -516,7 +586,7 @@ void loop()
 				indice_rubrica =0;
 			}
 		}
-		else
+		else	if (i_telefono)
 		{
 			if (!telefona_atutti(++indice_rubrica))
 			indice_rubrica =0;
@@ -524,8 +594,10 @@ void loop()
 	}
 	else	if (allarme)
 		primo_giro =0;
-	if ((acceso || i_test)
-	&& mySwitch.available())
+	
+	if (!allarme
+		&& (acceso || i_test)
+		&& mySwitch.available())
 	{
 		int value = mySwitch.getReceivedValue();
     
