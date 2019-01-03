@@ -26,7 +26,7 @@ char	smsbuffer[160];
 char	messaggio[60];
 char	Mittente[20];
 char	NomeMittente[51];
-int		allarme =0;
+int		w_allarme =0;
 int		primo_giro =0;
 int		arduino =0;
 int		led_status =0;
@@ -42,6 +42,7 @@ int		i_test	=0;
 int		i_messaggi	=0;
 int		i_telefono	=0;
 int		i_sirena	=0;
+long	i_tempo_allarme	=0;
 
 char	w_azione	[][11] ={  "ACCESO", "SPENTO", "NOTTE", "TIPO_1", "TEST", "IN_ALLARME", "AIUTO"};
 int		w_cicli	[] ={  1, 1, 1, 1, 1, 1, 1};
@@ -157,7 +158,7 @@ void Suona_Sirena()
 
 	if (i_aiuto)
 		ix =6;
-	else	if (allarme)
+	else	if (w_allarme)
 		ix =5;
 	else	if (i_acceso)
 		ix =0;
@@ -299,7 +300,7 @@ void Reset_AlarmSystem()
 	Serial.println("allarme_spento");
 	
 	//Serial.println("arduino_sirena");
-	allarme =0;
+	w_allarme =0;
 	led_status =0;
 	indice_rubrica =0;
 
@@ -314,7 +315,7 @@ void Activate_AlarmSystem(int i_acc, int i_not,int i_ti1)
 	digitalWrite(LED, HIGH);  // accende il LED simulando un allarme
 	acceso = true;            // Indica che il LED è acceso (allarme ON => pushbutton schiacciato)
 	SMSInviato=false;           // Indica che se avrò un allarme invia un SMS di avviso
-	allarme =0;
+	w_allarme =0;
 	led_status =1;
 	indice_rubrica =0;
 	i_acceso =i_acc;
@@ -339,11 +340,11 @@ void Activate_AlarmSystem(int i_acc, int i_not,int i_ti1)
 
 void  sms_status(int  flagall)
 {
-	if (allarme && flagall)
+	if (w_allarme && flagall)
 		sprintf(smsbuffer, "Allarme in ALLARME --> %s", messaggio);
 	if (!arduino)
 	{
-		// if (allarme)
+		// if (w_allarme)
 			// sms.SendSMS(Mittente, smsbuffer); // restituisce true se invia l'SMS
 		// else if (!acceso)
 			// sms.SendSMS(Mittente,"Allarme SPENTO!"); // restituisce true se invia l'SMS
@@ -360,11 +361,11 @@ void  sms_status(int  flagall)
 
 	if (flagall)
 		Serial.print("inviato messaggio a " +String(Mittente) +String(" : "));
-	if (allarme && flagall)
+	if (w_allarme && flagall)
 		Serial.println(smsbuffer);
 	else
 	{
-		if (allarme)
+		if (w_allarme)
 			Serial.println("Allarme in ALLARME");
 		else	if (!acceso)
 			Serial.println("allarme_spento");
@@ -418,8 +419,10 @@ void  Allarme_gen()
 	int ix;
 	int iy;
 	
- 	allarme = primo_giro =1;
+ 	w_allarme = primo_giro =1;
 	i_messaggi =i_telefono =i_sirena =1;
+	i_tempo_allarme =0L;
+	
 	Suona_Sirena();
 	for (ix =8, iy =0; smsbuffer[ix]; ix++)
 	{
@@ -458,6 +461,8 @@ void  Allarme_gen()
 					else	if (ic ==1)
 						i_telefono =0;
 					else	if (ic ==2)
+						i_sirena =0;
+					else	if (ic ==3)
 						break;
 				}
 				ic++;
@@ -471,12 +476,11 @@ void  Allarme_gen()
 			else
 				appo[iy++] =smsbuffer[ix];
 		}
-		if (ic)
+		if (ic ==3)
 		{
 			appo[iy] ='\0';
 			
-			if (!strcmp(appo, "NO"))
-				i_sirena =0;	
+			i_tempo_allarme =atol(appo) *1000L;
 		}
 	}
 	Serial.print("azioni -> ");
@@ -616,8 +620,9 @@ void setup()
 	Reset_AlarmSystem();
 }  
 
-long	tempoPassato =0;
-long	intervallo =1000;	//tempo di attesa tra le letture sms 
+long	tempoPassato =0L;
+long	intervallo =1000L;	//tempo di attesa tra le letture sms
+long	tempoInizioAllarme =0L; 
   
 void loop() 
 { 
@@ -708,7 +713,7 @@ void loop()
 		Serial.println("GSM INATTIVO");
 		return; // se il GSM non parte il sistema di allarme non viene gestito.
 	}
-	if (allarme && !primo_giro)
+	if (w_allarme && !primo_giro)
 	{
 		arduino =0;
     
@@ -741,10 +746,10 @@ void loop()
 			}
 		}
 	}
-	else	if (allarme)
+	else	if (w_allarme)
 		primo_giro =0;
 	
-	if (!allarme
+	if (!w_allarme
 		&& (acceso || i_test)
 		&& mySwitch.available())
 	{
