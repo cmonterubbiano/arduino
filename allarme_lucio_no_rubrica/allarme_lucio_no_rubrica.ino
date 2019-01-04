@@ -25,7 +25,8 @@ boolean	SMSInviato;
 char	smsbuffer[160];
 char	messaggio[60];
 char	Mittente[20];
-int		allarme =0;
+char	NomeMittente[51];
+int		w_allarme =0;
 int		primo_giro =0;
 int		arduino =0;
 int		led_status =0;
@@ -41,6 +42,8 @@ int		i_test	=0;
 int		i_messaggi	=0;
 int		i_telefono	=0;
 int		i_sirena	=0;
+long	i_tempo_allarme	=0;
+long	tempoInizioAllarme =0L; 
 
 char	w_azione	[][11] ={  "ACCESO", "SPENTO", "NOTTE", "TIPO_1", "TEST", "IN_ALLARME", "AIUTO"};
 int		w_cicli	[] ={  1, 1, 1, 1, 1, 1, 1};
@@ -156,7 +159,7 @@ void Suona_Sirena()
 
 	if (i_aiuto)
 		ix =6;
-	else	if (allarme)
+	else	if (w_allarme)
 		ix =5;
 	else	if (i_acceso)
 		ix =0;
@@ -263,28 +266,32 @@ void	Analizza_Rubrica()
 		if (!strcmp(appo, "SI"))
 			a_messaggia =1;
 	}
-
-	for (ix =0; ix <10;ix++)
+	for (ix =0; ix <strlen(a_nome) && a_nome[ix] ==' '; ix++);
+	
+	if (ix !=strlen(a_nome))
 	{
-		if (!*r_nome[ix]
-		|| (!strcmp(r_nome[ix], a_nome))
-		|| (!strcmp(r_numero[ix], a_numero)))
+		for (ix =0; ix <10;ix++)
 		{
-			strcpy(r_nome[ix], a_nome);
-			strcpy(r_numero[ix], a_numero);
-			r_telefona[ix] =a_telefona;
-			r_messaggia[ix] =a_messaggia;
-			
-			Serial.print(ix);
-			Serial.print(" - ");
-			Serial.print(a_nome);
-			Serial.print(" - ");
-			Serial.print(a_numero);
-			Serial.print(" - ");
-			Serial.print(a_telefona);
-			Serial.print(" - ");
-			Serial.println(a_messaggia);
-			break;
+			if (!*r_nome[ix]
+			|| (!strcmp(r_nome[ix], a_nome))
+			|| (!strcmp(r_numero[ix], a_numero)))
+			{
+				strcpy(r_nome[ix], a_nome);
+				strcpy(r_numero[ix], a_numero);
+				r_telefona[ix] =a_telefona;
+				r_messaggia[ix] =a_messaggia;
+				
+				Serial.print(ix);
+				Serial.print(" - ");
+				Serial.print(a_nome);
+				Serial.print(" - ");
+				Serial.print(a_numero);
+				Serial.print(" - ");
+				Serial.print(a_telefona);
+				Serial.print(" - ");
+				Serial.println(a_messaggia);
+				break;
+			}
 		}
 	}
 }
@@ -298,7 +305,7 @@ void Reset_AlarmSystem()
 	Serial.println("allarme_spento");
 	
 	//Serial.println("arduino_sirena");
-	allarme =0;
+	w_allarme =0;
 	led_status =0;
 	indice_rubrica =0;
 
@@ -313,7 +320,7 @@ void Activate_AlarmSystem(int i_acc, int i_not,int i_ti1)
 	digitalWrite(LED, HIGH);  // accende il LED simulando un allarme
 	acceso = true;            // Indica che il LED è acceso (allarme ON => pushbutton schiacciato)
 	SMSInviato=false;           // Indica che se avrò un allarme invia un SMS di avviso
-	allarme =0;
+	w_allarme =0;
 	led_status =1;
 	indice_rubrica =0;
 	i_acceso =i_acc;
@@ -338,11 +345,11 @@ void Activate_AlarmSystem(int i_acc, int i_not,int i_ti1)
 
 void  sms_status(int  flagall)
 {
-	if (allarme && flagall)
+	if (w_allarme && flagall)
 		sprintf(smsbuffer, "Allarme in ALLARME --> %s", messaggio);
 	if (!arduino)
 	{
-		// if (allarme)
+		// if (w_allarme)
 			// sms.SendSMS(Mittente, smsbuffer); // restituisce true se invia l'SMS
 		// else if (!acceso)
 			// sms.SendSMS(Mittente,"Allarme SPENTO!"); // restituisce true se invia l'SMS
@@ -359,11 +366,11 @@ void  sms_status(int  flagall)
 
 	if (flagall)
 		Serial.print("inviato messaggio a " +String(Mittente) +String(" : "));
-	if (allarme && flagall)
+	if (w_allarme && flagall)
 		Serial.println(smsbuffer);
 	else
 	{
-		if (allarme)
+		if (w_allarme)
 			Serial.println("Allarme in ALLARME");
 		else	if (!acceso)
 			Serial.println("allarme_spento");
@@ -403,6 +410,7 @@ int	ControlloMittente()
 
 		if (!strcmp(appo_lett, appo_mitt))
 		{
+			strcpy(NomeMittente, r_nome[ix]);
 			trovato =1;
 			break;
 		}
@@ -416,8 +424,10 @@ void  Allarme_gen()
 	int ix;
 	int iy;
 	
- 	allarme = primo_giro =1;
+ 	w_allarme = primo_giro =1;
 	i_messaggi =i_telefono =i_sirena =1;
+	i_tempo_allarme =0L;
+	
 	Suona_Sirena();
 	for (ix =8, iy =0; smsbuffer[ix]; ix++)
 	{
@@ -456,6 +466,8 @@ void  Allarme_gen()
 					else	if (ic ==1)
 						i_telefono =0;
 					else	if (ic ==2)
+						i_sirena =0;
+					else	if (ic ==3)
 						break;
 				}
 				ic++;
@@ -469,12 +481,11 @@ void  Allarme_gen()
 			else
 				appo[iy++] =smsbuffer[ix];
 		}
-		if (ic)
+		if (ic ==3)
 		{
 			appo[iy] ='\0';
 			
-			if (!strcmp(appo, "NO"))
-				i_sirena =0;	
+			i_tempo_allarme =(atol(appo) *1000L *60L);
 		}
 	}
 	Serial.print("azioni -> ");
@@ -484,31 +495,52 @@ void  Allarme_gen()
 		Serial.print("-telefono");
 	if (i_sirena)
 		Serial.print("-sirena");
+	if (i_tempo_allarme)
+		Serial.print("-tempo_allarme");
 	Serial.println("-");
+	if (i_tempo_allarme && !i_aiuto)
+		tempoInizioAllarme =millis();
+	else
+		tempoInizioAllarme =0L;
 }
 
 int messaggio_gen(int pos_rub)
 {
-	int rito =1;
-  
-	if (1 == gsm.GetPhoneNumber(pos_rub, Mittente)) // legge la rubrica e ritorna il numero in posizione sim_pos
+	int rito =0;
+	int	ix;
+
+	for (; pos_rub <10 && *r_nome[pos_rub]; pos_rub++)
+	{
+		if (!r_messaggia[pos_rub])
+			continue;
+		strcpy(NomeMittente, r_nome[pos_rub]);
+		strcpy(Mittente, r_numero[pos_rub]);
 		sms_status(1);
-	else  rito =0;
-  
+		indice_rubrica =pos_rub +1;
+		rito =1;
+		break;
+	}
 	return(rito);
 }
 
 int telefona_atutti(int pos_rub)
 {
-	int rito =1;
-  
-	if (1 == gsm.GetPhoneNumber(pos_rub, Mittente)) // legge la rubrica e ritorna il numero in posizione sim_pos
+	int rito =0;
+	int	ix;
+
+	for (; pos_rub <10 && *r_nome[pos_rub]; pos_rub++)
 	{
-		Serial.println("Telefono a " +String(Mittente));
-	//  gsm.call(Mittente, 20000);
+		if (!r_telefona[pos_rub])
+			continue;
+		strcpy(NomeMittente, r_nome[pos_rub]);
+		strcpy(Mittente, r_numero[pos_rub]);
+		Serial.println("Telefono a " +String(Mittente)+String(" - ")+String(NomeMittente));
+		//  gsm.call(Mittente, 20000);
 		gsm.call("337634273", 20000);
+		rito =1;
+		indice_rubrica =pos_rub +1;
+		break;
 	}
-	else  rito =0;
   
 	return(rito);
 }
@@ -599,8 +631,8 @@ void setup()
 	Reset_AlarmSystem();
 }  
 
-long	tempoPassato =0;
-long	intervallo =1000;	//tempo di attesa tra le letture sms 
+long	tempoPassato =0L;
+long	intervallo =1000L;	//tempo di attesa tra le letture sms
   
 void loop() 
 { 
@@ -630,6 +662,8 @@ void loop()
     	}
 		if (position && ControlloMittente()) 
 		{
+			if (!arduino)
+				Serial.println("["+String(Mittente)+String("]")+NomeMittente+String("-")+ String(smsbuffer));
 			if (!strncmp(smsbuffer,"Spegni", 6))
 				Reset_AlarmSystem();
 			else  if (!strncmp(smsbuffer,"carica_sirena", 13))
@@ -647,10 +681,7 @@ void loop()
 			else  if (!strncmp(smsbuffer,"Stato", 5))
 				sms_status(0);
 			else  if (!strncmp(smsbuffer,  "Ti ho chiamato 1 volta,", 23))
-			{
-				Serial.println("[telefonata ricevuta da "+String(Mittente)+String("]"));
-				Reset_AlarmSystem();
-			}				
+				Reset_AlarmSystem();			
 			else  if (!strncmp(smsbuffer,"Aiuto", 5))
 			{
 				Serial.println("allarme_aiuto");
@@ -692,7 +723,7 @@ void loop()
 		Serial.println("GSM INATTIVO");
 		return; // se il GSM non parte il sistema di allarme non viene gestito.
 	}
-	if (allarme && !primo_giro)
+	if (w_allarme && !primo_giro)
 	{
 		arduino =0;
     
@@ -711,7 +742,7 @@ void loop()
 		
 		if (i_messaggi && SMSInviato ==false)
 		{
-			if (!messaggio_gen(++indice_rubrica))
+			if (!messaggio_gen(indice_rubrica))
 			{
 				SMSInviato =true;
 				indice_rubrica =0;
@@ -719,14 +750,34 @@ void loop()
 		}
 		else	if (i_telefono)
 		{
-			if (!telefona_atutti(++indice_rubrica))
-			indice_rubrica =0;
+			if (!telefona_atutti(indice_rubrica))
+			{
+				indice_rubrica =0;
+			}
+		}
+		if (i_tempo_allarme)
+		{
+			  	if (millis() <tempoInizioAllarme)
+					tempoInizioAllarme =millis();
+				
+				if((millis() -tempoInizioAllarme) >i_tempo_allarme)
+				{
+					if (i_acceso)
+						Activate_AlarmSystem(1, 0, 0);
+					else	if (i_notte)
+						Activate_AlarmSystem(0, 1, 0);
+					else	if (i_tipo_1)
+						Activate_AlarmSystem(0, 0, 1);
+					tempoInizioAllarme =millis();					
+				}
 		}
 	}
-	else	if (allarme)
+	else	if (w_allarme)
+	{
 		primo_giro =0;
+	}
 	
-	if (!allarme
+	if (!w_allarme
 		&& (acceso || i_test)
 		&& mySwitch.available())
 	{

@@ -43,6 +43,7 @@ int		i_messaggi	=0;
 int		i_telefono	=0;
 int		i_sirena	=0;
 long	i_tempo_allarme	=0;
+long	tempoInizioAllarme =0L; 
 
 char	w_azione	[][11] ={  "ACCESO", "SPENTO", "NOTTE", "TIPO_1", "TEST", "IN_ALLARME", "AIUTO"};
 int		w_cicli	[] ={  1, 1, 1, 1, 1, 1, 1};
@@ -265,28 +266,32 @@ void	Analizza_Rubrica()
 		if (!strcmp(appo, "SI"))
 			a_messaggia =1;
 	}
-
-	for (ix =0; ix <10;ix++)
+	for (ix =0; ix <strlen(a_nome) && a_nome[ix] ==' '; ix++);
+	
+	if (ix !=strlen(a_nome))
 	{
-		if (!*r_nome[ix]
-		|| (!strcmp(r_nome[ix], a_nome))
-		|| (!strcmp(r_numero[ix], a_numero)))
+		for (ix =0; ix <10;ix++)
 		{
-			strcpy(r_nome[ix], a_nome);
-			strcpy(r_numero[ix], a_numero);
-			r_telefona[ix] =a_telefona;
-			r_messaggia[ix] =a_messaggia;
-			
-			Serial.print(ix);
-			Serial.print(" - ");
-			Serial.print(a_nome);
-			Serial.print(" - ");
-			Serial.print(a_numero);
-			Serial.print(" - ");
-			Serial.print(a_telefona);
-			Serial.print(" - ");
-			Serial.println(a_messaggia);
-			break;
+			if (!*r_nome[ix]
+			|| (!strcmp(r_nome[ix], a_nome))
+			|| (!strcmp(r_numero[ix], a_numero)))
+			{
+				strcpy(r_nome[ix], a_nome);
+				strcpy(r_numero[ix], a_numero);
+				r_telefona[ix] =a_telefona;
+				r_messaggia[ix] =a_messaggia;
+				
+				Serial.print(ix);
+				Serial.print(" - ");
+				Serial.print(a_nome);
+				Serial.print(" - ");
+				Serial.print(a_numero);
+				Serial.print(" - ");
+				Serial.print(a_telefona);
+				Serial.print(" - ");
+				Serial.println(a_messaggia);
+				break;
+			}
 		}
 	}
 }
@@ -480,7 +485,7 @@ void  Allarme_gen()
 		{
 			appo[iy] ='\0';
 			
-			i_tempo_allarme =atol(appo) *1000L;
+			i_tempo_allarme =(atol(appo) *1000L *60L);
 		}
 	}
 	Serial.print("azioni -> ");
@@ -490,7 +495,13 @@ void  Allarme_gen()
 		Serial.print("-telefono");
 	if (i_sirena)
 		Serial.print("-sirena");
+	if (i_tempo_allarme)
+		Serial.print("-tempo_allarme");
 	Serial.println("-");
+	if (i_tempo_allarme && !i_aiuto)
+		tempoInizioAllarme =millis();
+	else
+		tempoInizioAllarme =0L;
 }
 
 int messaggio_gen(int pos_rub)
@@ -622,7 +633,6 @@ void setup()
 
 long	tempoPassato =0L;
 long	intervallo =1000L;	//tempo di attesa tra le letture sms
-long	tempoInizioAllarme =0L; 
   
 void loop() 
 { 
@@ -745,9 +755,27 @@ void loop()
 				indice_rubrica =0;
 			}
 		}
+		if (i_tempo_allarme)
+		{
+			  	if (millis() <tempoInizioAllarme)
+					tempoInizioAllarme =millis();
+				
+				if((millis() -tempoInizioAllarme) >i_tempo_allarme)
+				{
+					if (i_acceso)
+						Activate_AlarmSystem(1, 0, 0);
+					else	if (i_notte)
+						Activate_AlarmSystem(0, 1, 0);
+					else	if (i_tipo_1)
+						Activate_AlarmSystem(0, 0, 1);
+					tempoInizioAllarme =millis();					
+				}
+		}
 	}
 	else	if (w_allarme)
+	{
 		primo_giro =0;
+	}
 	
 	if (!w_allarme
 		&& (acceso || i_test)
