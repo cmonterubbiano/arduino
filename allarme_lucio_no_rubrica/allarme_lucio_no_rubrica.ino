@@ -266,7 +266,7 @@ void	Analizza_Rubrica()
 		if (!strcmp(appo, "SI"))
 			a_messaggia =1;
 	}
-	for (ix =0; ix <strlen(a_nome) && a_nome[ix] ==' '; ix++);
+	for (ix =0; ix <strlen(a_nome) && a_nome[ix] =='_'; ix++);
 	
 	if (ix !=strlen(a_nome))
 	{
@@ -535,8 +535,8 @@ int telefona_atutti(int pos_rub)
 		strcpy(NomeMittente, r_nome[pos_rub]);
 		strcpy(Mittente, r_numero[pos_rub]);
 		Serial.println("Telefono a " +String(Mittente)+String(" - ")+String(NomeMittente));
-		//  gsm.call(Mittente, 20000);
-		gsm.call("337634273", 20000);
+		gsm.call(Mittente, 20000);
+		//gsm.call("337634273", 20000);
 		rito =1;
 		indice_rubrica =pos_rub +1;
 		break;
